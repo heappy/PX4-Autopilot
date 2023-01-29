@@ -32,3 +32,4 @@
 ############################################################################
 
 add_subdirectory(uwb_sr150)
+add_subdirectory(uwb_crazyflie_px4)

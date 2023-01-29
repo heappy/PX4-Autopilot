@@ -1,0 +1,5 @@
+menuconfig DRIVERS_UWB_UWB_CFBOARD
+	bool "uwb_cfboard"
+	default n
+	---help---
+		Enable support for uwb cfboard
