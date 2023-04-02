@@ -47,7 +47,7 @@
 #include "python/ekf_derivation/generated/compute_mag_z_innov_var_and_h.h"
 #include "python/ekf_derivation/generated/compute_yaw_321_innov_var_and_h.h"
 #include "python/ekf_derivation/generated/compute_yaw_312_innov_var_and_h.h"
-#include "python/ekf_derivation/generated/compute_mag_declination_innov_innov_var_and_h.h"
+#include "python/ekf_derivation/generated/compute_mag_declination_pred_innov_var_and_h.h"
 
 #include <mathlib/mathlib.h>
 
@@ -258,22 +258,12 @@ bool Ekf::fuseYaw(const float innovation, const float variance, estimator_aid_so
 	// only calculate gains for states we are using
 	Vector24f Kfusion;
 
-	for (uint8_t row = 0; row <= 15; row++) {
+	for (uint8_t row = 0; row < _k_num_states; row++) {
 		for (uint8_t col = 0; col <= 3; col++) {
 			Kfusion(row) += P(row, col) * H_YAW(col);
 		}
 
 		Kfusion(row) *= heading_innov_var_inv;
-	}
-
-	if (_control_status.flags.wind) {
-		for (uint8_t row = 22; row <= 23; row++) {
-			for (uint8_t col = 0; col <= 3; col++) {
-				Kfusion(row) += P(row, col) * H_YAW(col);
-			}
-
-			Kfusion(row) *= heading_innov_var_inv;
-		}
 	}
 
 	// define the innovation gate size
@@ -345,10 +335,12 @@ bool Ekf::fuseDeclination(float decl_sigma)
 	const float R_DECL = sq(decl_sigma);
 
 	Vector24f H;
-	float innovation;
+	float decl_pred;
 	float innovation_variance;
 
-	sym::ComputeMagDeclinationInnovInnovVarAndH(getStateAtFusionHorizonAsVector(), P, getMagDeclination(), R_DECL, FLT_EPSILON, &innovation, &innovation_variance, &H);
+	sym::ComputeMagDeclinationPredInnovVarAndH(getStateAtFusionHorizonAsVector(), P, R_DECL, FLT_EPSILON, &decl_pred, &innovation_variance, &H);
+
+	const float innovation = wrap_pi(decl_pred - getMagDeclination());
 
 	if (innovation_variance < R_DECL) {
 		// variance calculation is badly conditioned

@@ -489,9 +489,10 @@ PARAM_DEFINE_INT32(EKF2_DECL_TYPE, 7);
 /**
  * Type of magnetometer fusion
  *
- * Integer controlling the type of magnetometer fusion used - magnetic heading or 3-component vector. The fuson of magnetometer data as a three component vector enables vehicle body fixed hard iron errors to be learned, but requires a stable earth field.
+ * Integer controlling the type of magnetometer fusion used - magnetic heading or 3-component vector.
+ * The fusion of magnetometer data as a three component vector enables vehicle body fixed hard iron errors to be learned, but requires a stable earth field.
  * If set to 'Automatic' magnetic heading fusion is used when on-ground and 3-axis magnetic field fusion in-flight with fallback to magnetic heading fusion if there is insufficient motion to make yaw or magnetic field states observable.
- * If set to 'Magnetic heading' magnetic heading fusion is used at all times
+ * If set to 'Magnetic heading' magnetic heading fusion is used at all times.
  * If set to '3-axis' 3-axis field fusion is used at all times.
  * If set to 'VTOL custom' the behaviour is the same as 'Automatic', but if fusing airspeed, magnetometer fusion is only allowed to modify the magnetic field states. This can be used by VTOL platforms with large magnetic field disturbances to prevent incorrect bias states being learned during forward flight operation which can adversely affect estimation accuracy after transition to hovering flight.
  * If set to 'MC custom' the behaviour is the same as 'Automatic, but if there are no earth frame position or velocity observations being used, the magnetometer will not be used. This enables vehicles to operate with no GPS in environments where the magnetic field cannot be used to provide a heading reference. Prior to flight, the yaw angle is assumed to be constant if movement tests indicate that the vehicle is static. This allows the vehicle to be placed on the ground to learn the yaw gyro bias prior to flight.
@@ -531,7 +532,7 @@ PARAM_DEFINE_FLOAT(EKF2_MAG_ACCLIM, 0.5f);
  * @unit rad/s
  * @decimal 2
  */
-PARAM_DEFINE_FLOAT(EKF2_MAG_YAWLIM, 0.25f);
+PARAM_DEFINE_FLOAT(EKF2_MAG_YAWLIM, 0.20f);
 
 /**
  * Gate size for barometric and GPS height fusion
@@ -1072,6 +1073,7 @@ PARAM_DEFINE_FLOAT(EKF2_EV_POS_Z, 0.0f);
 * value will determine the minimum airspeed which will still be fused. Set to about 90% of the vehicles stall speed.
 * Both airspeed fusion and sideslip fusion must be active for the EKF to continue navigating after loss of GPS.
 * Use EKF2_FUSE_BETA to activate sideslip fusion.
+* Note: side slip fusion is currently not supported for tailsitters.
 *
 * @group EKF2
 * @min 0.0

@@ -49,7 +49,7 @@ public:
 	};
 
 	MicroddsClient(Transport transport, const char *device, int baudrate, const char *host, const char *port,
-		       bool localhost_only, const char *client_namespace);
+		       bool localhost_only, bool custom_participant, const char *client_namespace);
 
 	~MicroddsClient();
 
@@ -75,7 +75,19 @@ private:
 	int setBaudrate(int fd, unsigned baud);
 
 	const bool _localhost_only;
+	const bool _custom_participant;
 	const char *_client_namespace;
+
+
+	// max port characters (5+'\0')
+	static const uint8_t PORT_MAX_LENGTH = 6;
+	// max agent ip characters (15+'\0')
+	static const uint8_t AGENT_IP_MAX_LENGTH = 16;
+
+#if defined(CONFIG_NET) || defined(__PX4_POSIX)
+	char _port[PORT_MAX_LENGTH];
+	char _agent_ip[AGENT_IP_MAX_LENGTH];
+#endif
 
 	SendTopicsSubs *_subs{nullptr};
 	RcvTopicsPubs *_pubs{nullptr};

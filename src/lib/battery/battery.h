@@ -55,9 +55,9 @@
 #include <lib/mathlib/math/filter/AlphaFilter.hpp>
 #include <uORB/PublicationMulti.hpp>
 #include <uORB/Subscription.hpp>
-#include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/vehicle_thrust_setpoint.h>
 
 /**
  * BatteryBase is a base class for any type of battery.
@@ -110,6 +110,8 @@ public:
 	void updateAndPublishBatteryStatus(const hrt_abstime &timestamp);
 
 protected:
+	static constexpr float LITHIUM_BATTERY_RECOGNITION_VOLTAGE = 2.1f;
+
 	struct {
 		param_t v_empty;
 		param_t v_charged;
@@ -151,7 +153,7 @@ private:
 	void computeScale();
 	float computeRemainingTime(float current_a);
 
-	uORB::Subscription _actuator_controls_0_sub{ORB_ID(actuator_controls_0)};
+	uORB::Subscription _vehicle_thrust_setpoint_0_sub{ORB_ID(vehicle_thrust_setpoint)};
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::PublicationMulti<battery_status_s> _battery_status_pub{ORB_ID(battery_status)};
 

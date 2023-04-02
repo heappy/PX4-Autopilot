@@ -52,6 +52,8 @@ bool Ekf::init(uint64_t timestamp)
 
 void Ekf::reset()
 {
+	ECL_INFO("reset");
+
 	_state.vel.setZero();
 	_state.pos.setZero();
 	_state.delta_ang_bias.setZero();
@@ -61,9 +63,11 @@ void Ekf::reset()
 	_state.wind_vel.setZero();
 	_state.quat_nominal.setIdentity();
 
+#if defined(CONFIG_EKF2_RANGE_FINDER)
 	_range_sensor.setPitchOffset(_params.rng_sens_pitch);
 	_range_sensor.setCosMaxTilt(_params.range_cos_max_tilt);
 	_range_sensor.setQualityHysteresis(_params.range_valid_quality_s);
+#endif // CONFIG_EKF2_RANGE_FINDER
 
 	_control_status.value = 0;
 	_control_status_prev.value = 0;
@@ -92,17 +96,13 @@ void Ekf::reset()
 	_time_last_hor_vel_fuse = 0;
 	_time_last_ver_vel_fuse = 0;
 	_time_last_heading_fuse = 0;
-
-	_time_last_flow_terrain_fuse = 0;
 	_time_last_zero_velocity_fuse = 0;
-	_time_last_healthy_rng_data = 0;
 
 	_last_known_pos.setZero();
 
 	_time_acc_bias_check = 0;
 
 	_gps_checks_passed = false;
-
 	_gps_alt_ref = NAN;
 
 	_baro_counter = 0;
@@ -113,30 +113,46 @@ void Ekf::reset()
 	_clip_counter = 0;
 
 	resetEstimatorAidStatus(_aid_src_baro_hgt);
-	resetEstimatorAidStatus(_aid_src_rng_hgt);
+#if defined(CONFIG_EKF2_AIRSPEED)
 	resetEstimatorAidStatus(_aid_src_airspeed);
+#endif // CONFIG_EKF2_AIRSPEED
+#if defined(CONFIG_EKF2_SIDESLIP)
 	resetEstimatorAidStatus(_aid_src_sideslip);
+#endif // CONFIG_EKF2_SIDESLIP
 
 	resetEstimatorAidStatus(_aid_src_fake_pos);
 	resetEstimatorAidStatus(_aid_src_fake_hgt);
 
+#if defined(CONFIG_EKF2_EXTERNAL_VISION)
 	resetEstimatorAidStatus(_aid_src_ev_hgt);
 	resetEstimatorAidStatus(_aid_src_ev_pos);
 	resetEstimatorAidStatus(_aid_src_ev_vel);
 	resetEstimatorAidStatus(_aid_src_ev_yaw);
+#endif // CONFIG_EKF2_EXTERNAL_VISION
 
 	resetEstimatorAidStatus(_aid_src_gnss_hgt);
 	resetEstimatorAidStatus(_aid_src_gnss_pos);
 	resetEstimatorAidStatus(_aid_src_gnss_vel);
+
+#if defined(CONFIG_EKF2_GNSS_YAW)
 	resetEstimatorAidStatus(_aid_src_gnss_yaw);
+#endif // CONFIG_EKF2_GNSS_YAW
 
 	resetEstimatorAidStatus(_aid_src_mag_heading);
 	resetEstimatorAidStatus(_aid_src_mag);
 
+#if defined(CONFIG_EKF2_AUXVEL)
 	resetEstimatorAidStatus(_aid_src_aux_vel);
+#endif // CONFIG_EKF2_AUXVEL
 
+#if defined(CONFIG_EKF2_OPTICAL_FLOW)
 	resetEstimatorAidStatus(_aid_src_optical_flow);
 	resetEstimatorAidStatus(_aid_src_terrain_optical_flow);
+#endif // CONFIG_EKF2_OPTICAL_FLOW
+
+#if defined(CONFIG_EKF2_RANGE_FINDER)
+	resetEstimatorAidStatus(_aid_src_rng_hgt);
+#endif // CONFIG_EKF2_RANGE_FINDER
 }
 
 bool Ekf::update()
@@ -164,8 +180,10 @@ bool Ekf::update()
 		// control fusion of observation data
 		controlFusionModes(imu_sample_delayed);
 
+#if defined(CONFIG_EKF2_RANGE_FINDER)
 		// run a separate filter for terrain estimation
 		runTerrainEstimator(imu_sample_delayed);
+#endif // CONFIG_EKF2_RANGE_FINDER
 
 		_output_predictor.correctOutputStates(imu_sample_delayed.time_us, getGyroBias(), getAccelBias(),
 							_state.quat_nominal, _state.vel, _state.pos);
@@ -196,63 +214,17 @@ bool Ekf::initialiseFilter()
 		_gyro_lpf.update(imu_init.delta_ang / imu_init.delta_ang_dt);
 	}
 
-	// Sum the magnetometer measurements
-	if (_mag_buffer) {
-		magSample mag_sample;
-
-		if (_mag_buffer->pop_first_older_than(_time_delayed_us, &mag_sample)) {
-			if (mag_sample.time_us != 0) {
-				if (_mag_counter == 0) {
-					_mag_lpf.reset(mag_sample.mag);
-
-				} else {
-					_mag_lpf.update(mag_sample.mag);
-				}
-
-				_mag_counter++;
-			}
-		}
-	}
-
 	if (!initialiseTilt()) {
 		return false;
-	}
-
-	// calculate the initial magnetic field and yaw alignment
-	// but do not mark the yaw alignement complete as it needs to be
-	// reset once the leveling phase is done
-	if (_params.mag_fusion_type <= MagFuseType::MAG_3D) {
-		if (_mag_counter > 1) {
-			// rotate the magnetometer measurements into earth frame using a zero yaw angle
-			// the angle of the projection onto the horizontal gives the yaw angle
-			const Vector3f mag_earth_pred = updateYawInRotMat(0.f, _R_to_earth) * _mag_lpf.getState();
-			float yaw_new = -atan2f(mag_earth_pred(1), mag_earth_pred(0)) + getMagDeclination();
-
-			// update the rotation matrix using the new yaw value
-			_R_to_earth = updateYawInRotMat(yaw_new, Dcmf(_state.quat_nominal));
-			_state.quat_nominal = _R_to_earth;
-
-			// set the earth magnetic field states using the updated rotation
-			_state.mag_I = _R_to_earth * _mag_lpf.getState();
-			_state.mag_B.zero();
-
-		} else {
-			// not enough mag samples accumulated
-			return false;
-		}
 	}
 
 	// initialise the state covariance matrix now we have starting values for all the states
 	initialiseCovariance();
 
-	// update the yaw angle variance using the variance of the measurement
-	if (_params.mag_fusion_type <= MagFuseType::MAG_3D) {
-		// using magnetic heading tuning parameter
-		increaseQuatYawErrVariance(sq(fmaxf(_params.mag_heading_noise, 1.0e-2f)));
-	}
-
+#if defined(CONFIG_EKF2_RANGE_FINDER)
 	// Initialise the terrain estimator
 	initHagl();
+#endif // CONFIG_EKF2_RANGE_FINDER
 
 	// reset the output predictor state history to match the EKF initial values
 	_output_predictor.alignOutputFilter(_state.quat_nominal, _state.vel, _state.pos);
@@ -271,12 +243,8 @@ bool Ekf::initialiseTilt()
 		return false;
 	}
 
-	// get initial roll and pitch estimate from delta velocity vector, assuming vehicle is static
-	const Vector3f gravity_in_body = _accel_lpf.getState().normalized();
-	const float pitch = asinf(gravity_in_body(0));
-	const float roll = atan2f(-gravity_in_body(1), -gravity_in_body(2));
-
-	_state.quat_nominal = Quatf{Eulerf{roll, pitch, 0.0f}};
+	// get initial tilt estimate from delta velocity vector, assuming vehicle is static
+	_state.quat_nominal = Quatf(_accel_lpf.getState(), Vector3f(0.f, 0.f, -1.f));
 	_R_to_earth = Dcmf(_state.quat_nominal);
 
 	return true;
