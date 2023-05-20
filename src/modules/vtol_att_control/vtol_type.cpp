@@ -301,16 +301,11 @@ bool VtolType::isFrontTransitionAltitudeLoss()
 {
 	bool result = false;
 
-	if (_param_vt_qc_t_alt_loss.get() > FLT_EPSILON && _common_vtol_mode == mode::TRANSITION_TO_FW && _local_pos->z_valid) {
+	// only run if param set, altitude valid and controlled, and in transition to FW or within 5s of finishing it.
+	if (_param_vt_qc_t_alt_loss.get() > FLT_EPSILON && _local_pos->z_valid && _v_control_mode->flag_control_altitude_enabled
+	    && (_common_vtol_mode == mode::TRANSITION_TO_FW || hrt_elapsed_time(&_trans_finished_ts) < 5_s)) {
 
-		if (_local_pos->z <= FLT_EPSILON) {
-			// vehilce is above home
-			result = _local_pos->z - _local_position_z_start_of_transition > _param_vt_qc_t_alt_loss.get();
-
-		} else {
-			// vehilce is below home
-			result = _local_position_z_start_of_transition - _local_pos->z > _param_vt_qc_t_alt_loss.get();
-		}
+		result = _local_pos->z - _local_position_z_start_of_transition > _param_vt_qc_t_alt_loss.get();
 	}
 
 	return result;
@@ -347,9 +342,9 @@ bool VtolType::isRollExceeded()
 bool VtolType::isFrontTransitionTimeout()
 {
 	// check front transition timeout
-	if (_param_vt_trans_timeout.get()  > FLT_EPSILON && _common_vtol_mode == mode::TRANSITION_TO_FW) {
+	if (getFrontTransitionTimeout()  > FLT_EPSILON && _common_vtol_mode == mode::TRANSITION_TO_FW) {
 
-		if (_time_since_trans_start > _param_vt_trans_timeout.get()) {
+		if (_time_since_trans_start > getFrontTransitionTimeout()) {
 			// transition timeout occured, abort transition
 			return true;
 		}
@@ -580,6 +575,11 @@ float VtolType::getFrontTransitionTimeFactor() const
 float VtolType::getMinimumFrontTransitionTime() const
 {
 	return getFrontTransitionTimeFactor() * _param_vt_trans_min_tm.get();
+}
+
+float VtolType::getFrontTransitionTimeout() const
+{
+	return getFrontTransitionTimeFactor() * _param_vt_trans_timeout.get();
 }
 
 float VtolType::getOpenLoopFrontTransitionTime() const

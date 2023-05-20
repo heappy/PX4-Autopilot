@@ -77,9 +77,10 @@ PARAM_DEFINE_INT32(VT_ELEV_MC_LOCK, 1);
 PARAM_DEFINE_FLOAT(VT_F_TRANS_DUR, 5.0f);
 
 /**
- * Duration of a back transition
+ * Maximum duration of a back transition
  *
- * Time in seconds used for a back transition
+ * Time in seconds used for a back transition maximally.
+ * Transition is also declared over if the groundspeed drops below MPC_XY_CRUISE.
  *
  * @unit s
  * @min 0.1
@@ -88,7 +89,7 @@ PARAM_DEFINE_FLOAT(VT_F_TRANS_DUR, 5.0f);
  * @decimal 2
  * @group VTOL Attitude Control
  */
-PARAM_DEFINE_FLOAT(VT_B_TRANS_DUR, 4.0f);
+PARAM_DEFINE_FLOAT(VT_B_TRANS_DUR, 10.0f);
 
 /**
  * Target throttle value for the transition to fixed-wing flight.
@@ -104,22 +105,6 @@ PARAM_DEFINE_FLOAT(VT_B_TRANS_DUR, 4.0f);
  * @group VTOL Attitude Control
  */
 PARAM_DEFINE_FLOAT(VT_F_TRANS_THR, 1.0f);
-
-/**
- * Target throttle value for the transition to hover flight.
- *
- * standard vtol: pusher
- *
- * tailsitter, tiltrotor: main throttle
- *
- *
- * @min -1
- * @max 1
- * @increment 0.01
- * @decimal 2
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_B_TRANS_THR, 0.0f);
 
 /**
  * Approximate deceleration during back transition
@@ -232,6 +217,8 @@ PARAM_DEFINE_FLOAT(VT_QC_HR_ERROR_I, 0.0f);
  * Quad-chute transition altitude loss threshold
  *
  * Altitude loss threshold for quad-chute triggering during VTOL transition to fixed-wing flight.
+ * Active until 5s after completing transition to fixed-wing.
+ * Only active if altitude estimate is valid and in altitude-controlled mode.
  * If the current altitude is more than this value below the altitude at the beginning of the
  * transition, it will instantly switch back to MC mode and execute behavior defined in COM_QC_ACT.
  *

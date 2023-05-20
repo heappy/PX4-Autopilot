@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2015-2017 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2016 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,20 +31,14 @@
 #
 ############################################################################
 
-add_subdirectory(launchdetection)
-add_subdirectory(runway_takeoff)
-
 px4_add_module(
-	MODULE modules__fw_path_navigation
-	MAIN fw_path_navigation
+	MODULE drivers__spektrum_rc
+	MAIN spektrum_rc
+	INCLUDES
+		${PX4_SOURCE_DIR}/src/drivers/rc_input
 	SRCS
-		FixedwingPositionControl.cpp
-		FixedwingPositionControl.hpp
+		spektrum_rc.cpp
 	DEPENDS
-		launchdetection
-    		npfg
-		runway_takeoff
-		SlewRate
-		tecs
-		motion_planning
+		rc
 	)
+
