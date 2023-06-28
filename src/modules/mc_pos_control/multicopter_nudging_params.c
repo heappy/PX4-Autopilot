@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2023 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,83 +32,34 @@
  ****************************************************************************/
 
 /**
- * @file tiltrotor_params.c
- * Parameters for vtol attitude controller.
+ * Enable nudging based on user input during autonomous land routine
  *
- * @author Roman Bapst <roman@px4.io>
+ * Using stick input the vehicle can be moved horizontally and yawed.
+ * The descend speed is amended:
+ * stick full up - 0
+ * stick centered - MPC_LAND_SPEED
+ * stick full down - 2 * MPC_LAND_SPEED
+ *
+ * Manual override during auto modes has to be disabled to use this feature (see COM_RC_OVERRIDE).
+ *
+ * @min 0
+ * @max 1
+ * @value 0 Nudging disabled
+ * @value 1 Nudging enabled
+ * @group Multicopter Position Control
  */
+PARAM_DEFINE_INT32(MPC_LAND_RC_HELP, 0);
 
 /**
- * Normalized tilt in Hover
+ * User assisted landing radius
  *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
+ * When nudging is enabled (see MPC_LAND_RC_HELP), this controls
+ * the maximum allowed horizontal displacement from the original landing point.
+ *
+ * @unit m
+ * @min 0
+ * @decimal 0
+ * @increment 1
+ * @group Multicopter Position Control
  */
-PARAM_DEFINE_FLOAT(VT_TILT_MC, 0.0f);
-
-/**
- * Normalized tilt in transition to FW
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_TRANS, 0.4f);
-
-/**
- * Normalized tilt in FW
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_FW, 1.0f);
-
-/**
- * Tilt when disarmed and in the first second after arming
- *
- * This specific tilt during spin-up is necessary for some systems whose motors otherwise don't
- * spin-up freely.
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 2
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_SPINUP, 0.0f);
-
-/**
- * Duration of front transition phase 2
- *
- * Time in seconds it takes to tilt form VT_TILT_TRANS to VT_TILT_FW.
- *
- * @unit s
- * @min 0.1
- * @max 5.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TRANS_P2_DUR, 0.5f);
-
-/**
- * Duration motor tilt up in backtransition
- *
- * Time in seconds it takes to tilt form VT_TILT_FW to VT_TILT_MC.
- *
- * @unit s
- * @min 0.1
- * @max 10
- * @increment 0.1
- * @decimal 1
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_BT_TILT_DUR, 1.f);
+PARAM_DEFINE_FLOAT(MPC_LAND_RADIUS, 1000.f);

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2023 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,83 +32,49 @@
  ****************************************************************************/
 
 /**
- * @file tiltrotor_params.c
- * Parameters for vtol attitude controller.
+ * Responsiveness
  *
- * @author Roman Bapst <roman@px4.io>
- */
-
-/**
- * Normalized tilt in Hover
+ * Changes the overall responsiveness of the vehicle.
+ * The higher the value, the faster the vehicle will react.
  *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_MC, 0.0f);
-
-/**
- * Normalized tilt in transition to FW
+ * If set to a value greater than zero, other parameters are automatically set (such as
+ * the acceleration or jerk limits).
+ * If set to a negative value, the existing individual parameters are used.
  *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_TRANS, 0.4f);
-
-/**
- * Normalized tilt in FW
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_FW, 1.0f);
-
-/**
- * Tilt when disarmed and in the first second after arming
- *
- * This specific tilt during spin-up is necessary for some systems whose motors otherwise don't
- * spin-up freely.
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
+ * @min -1
+ * @max 1
  * @decimal 2
- * @group VTOL Attitude Control
+ * @increment 0.05
+ * @group Multicopter Position Control
  */
-PARAM_DEFINE_FLOAT(VT_TILT_SPINUP, 0.0f);
+PARAM_DEFINE_FLOAT(SYS_VEHICLE_RESP, -0.4f);
 
 /**
- * Duration of front transition phase 2
+ * Overall Horizontal Velocity Limit
  *
- * Time in seconds it takes to tilt form VT_TILT_TRANS to VT_TILT_FW.
+ * If set to a value greater than zero, other parameters are automatically set (such as
+ * MPC_XY_VEL_MAX or MPC_VEL_MANUAL).
+ * If set to a negative value, the existing individual parameters are used.
  *
- * @unit s
- * @min 0.1
- * @max 5.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TRANS_P2_DUR, 0.5f);
-
-/**
- * Duration motor tilt up in backtransition
- *
- * Time in seconds it takes to tilt form VT_TILT_FW to VT_TILT_MC.
- *
- * @unit s
- * @min 0.1
- * @max 10
- * @increment 0.1
+ * @min -20
+ * @max 20
  * @decimal 1
- * @group VTOL Attitude Control
+ * @increment 1
+ * @group Multicopter Position Control
  */
-PARAM_DEFINE_FLOAT(VT_BT_TILT_DUR, 1.f);
+PARAM_DEFINE_FLOAT(MPC_XY_VEL_ALL, -10.f);
+
+/**
+ * Overall Vertical Velocity Limit
+ *
+ * If set to a value greater than zero, other parameters are automatically set (such as
+ * MPC_Z_VEL_MAX_UP or MPC_LAND_SPEED).
+ * If set to a negative value, the existing individual parameters are used.
+ *
+ * @min -3
+ * @max 8
+ * @decimal 1
+ * @increment 0.5
+ * @group Multicopter Position Control
+ */
+PARAM_DEFINE_FLOAT(MPC_Z_VEL_ALL, -3.f);

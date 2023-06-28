@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2023 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,83 +32,64 @@
  ****************************************************************************/
 
 /**
- * @file tiltrotor_params.c
- * Parameters for vtol attitude controller.
+ * Maximal tilt angle in Stabilized or Altitude mode
  *
- * @author Roman Bapst <roman@px4.io>
+ * @unit deg
+ * @min 0
+ * @max 90
+ * @decimal 0
+ * @increment 1
+ * @group Multicopter Position Control
  */
+PARAM_DEFINE_FLOAT(MPC_MAN_TILT_MAX, 35.f);
 
 /**
- * Normalized tilt in Hover
+ * Max manual yaw rate for Stabilized, Altitude, Position mode
  *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
+ * @unit deg/s
+ * @min 0
+ * @max 400
+ * @decimal 0
+ * @increment 10
+ * @group Multicopter Position Control
  */
-PARAM_DEFINE_FLOAT(VT_TILT_MC, 0.0f);
+PARAM_DEFINE_FLOAT(MPC_MAN_Y_MAX, 150.f);
 
 /**
- * Normalized tilt in transition to FW
+ * Minimum collective thrust in Stabilized mode
  *
+ * The value is mapped to the lowest throttle stick position in Stabilized mode.
+ *
+ * Too low collective thrust leads to loss of roll/pitch/yaw torque control authority.
+ * Airmode is used to keep torque authority with zero thrust (see MC_AIRMODE).
+ *
+ * @unit norm
  * @min 0.0
  * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_TRANS, 0.4f);
-
-/**
- * Normalized tilt in FW
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_FW, 1.0f);
-
-/**
- * Tilt when disarmed and in the first second after arming
- *
- * This specific tilt during spin-up is necessary for some systems whose motors otherwise don't
- * spin-up freely.
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
  * @decimal 2
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_SPINUP, 0.0f);
-
-/**
- * Duration of front transition phase 2
- *
- * Time in seconds it takes to tilt form VT_TILT_TRANS to VT_TILT_FW.
- *
- * @unit s
- * @min 0.1
- * @max 5.0
  * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
+ * @group Multicopter Position Control
  */
-PARAM_DEFINE_FLOAT(VT_TRANS_P2_DUR, 0.5f);
+PARAM_DEFINE_FLOAT(MPC_MANTHR_MIN, 0.08f);
 
 /**
- * Duration motor tilt up in backtransition
+ * Thrust curve mapping in Stabilized Mode
  *
- * Time in seconds it takes to tilt form VT_TILT_FW to VT_TILT_MC.
+ * This parameter defines how the throttle stick input is mapped to collective thrust
+ * in Stabilized mode.
  *
- * @unit s
- * @min 0.1
- * @max 10
- * @increment 0.1
- * @decimal 1
- * @group VTOL Attitude Control
+ * In case the default is used ('Rescale to hover thrust'), the stick input is linearly
+ * rescaled, such that a centered stick corresponds to the hover throttle (see MPC_THR_HOVER).
+ *
+ * Select 'No Rescale' to directly map the stick 1:1 to the output. This can be useful
+ * in case the hover thrust is very low and the default would lead to too much distortion
+ * (e.g. if hover thrust is set to 20%, then 80% of the upper thrust range is squeezed into the
+ * upper half of the stick range).
+ *
+ * Note: In case MPC_THR_HOVER is set to 50%, the modes 0 and 1 are the same.
+ *
+ * @value 0 Rescale to hover thrust
+ * @value 1 No Rescale
+ * @group Multicopter Position Control
  */
-PARAM_DEFINE_FLOAT(VT_BT_TILT_DUR, 1.f);
+PARAM_DEFINE_INT32(MPC_THR_CURVE, 0);

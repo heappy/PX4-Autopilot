@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2023 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,83 +32,56 @@
  ****************************************************************************/
 
 /**
- * @file tiltrotor_params.c
- * Parameters for vtol attitude controller.
+ * Vertical thrust required to hover
  *
- * @author Roman Bapst <roman@px4.io>
- */
-
-/**
- * Normalized tilt in Hover
+ * Mapped to center throttle stick in Stabilized mode (see MPC_THR_CURVE).
+ * Used for initialization of the hover thrust estimator (see MPC_USE_HTE).
+ * The estimated hover thrust is used as base for zero vertical acceleration in altitude control.
+ * The hover thrust is important for land detection to work correctly.
  *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_MC, 0.0f);
-
-/**
- * Normalized tilt in transition to FW
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_TRANS, 0.4f);
-
-/**
- * Normalized tilt in FW
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_FW, 1.0f);
-
-/**
- * Tilt when disarmed and in the first second after arming
- *
- * This specific tilt during spin-up is necessary for some systems whose motors otherwise don't
- * spin-up freely.
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
+ * @unit norm
+ * @min 0.1
+ * @max 0.8
  * @decimal 2
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_SPINUP, 0.0f);
-
-/**
- * Duration of front transition phase 2
- *
- * Time in seconds it takes to tilt form VT_TILT_TRANS to VT_TILT_FW.
- *
- * @unit s
- * @min 0.1
- * @max 5.0
  * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
+ * @group Multicopter Position Control
  */
-PARAM_DEFINE_FLOAT(VT_TRANS_P2_DUR, 0.5f);
+PARAM_DEFINE_FLOAT(MPC_THR_HOVER, 0.5f);
 
 /**
- * Duration motor tilt up in backtransition
+ * Hover thrust estimator
  *
- * Time in seconds it takes to tilt form VT_TILT_FW to VT_TILT_MC.
+ * Disable to use the fixed parameter MPC_THR_HOVER
+ * Enable to use the hover thrust estimator
  *
- * @unit s
- * @min 0.1
- * @max 10
- * @increment 0.1
- * @decimal 1
- * @group VTOL Attitude Control
+ * @boolean
+ * @group Multicopter Position Control
  */
-PARAM_DEFINE_FLOAT(VT_BT_TILT_DUR, 1.f);
+PARAM_DEFINE_INT32(MPC_USE_HTE, 1);
+
+/**
+ * Horizontal thrust margin
+ *
+ * Margin that is kept for horizontal control when higher priority vertical thrust is saturated.
+ * To avoid completely starving horizontal control with high vertical error.
+ *
+ * @unit norm
+ * @min 0.0
+ * @max 0.5
+ * @decimal 2
+ * @increment 0.01
+ * @group Multicopter Position Control
+ */
+PARAM_DEFINE_FLOAT(MPC_THR_XY_MARG, 0.3f);
+
+/**
+ * Numerical velocity derivative low pass cutoff frequency
+ *
+ * @unit Hz
+ * @min 0.0
+ * @max 10
+ * @decimal 1
+ * @increment 0.5
+ * @group Multicopter Position Control
+ */
+PARAM_DEFINE_FLOAT(MPC_VELD_LP, 5.0f);

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2023 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,84 +31,20 @@
  *
  ****************************************************************************/
 
-/**
- * @file tiltrotor_params.c
- * Parameters for vtol attitude controller.
- *
- * @author Roman Bapst <roman@px4.io>
- */
+#pragma once
 
-/**
- * Normalized tilt in Hover
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_MC, 0.0f);
+#include "../Common.hpp"
 
-/**
- * Normalized tilt in transition to FW
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_TRANS, 0.4f);
+class ArmPermissionChecks : public HealthAndArmingCheckBase
+{
+public:
+	ArmPermissionChecks() = default;
+	~ArmPermissionChecks() = default;
 
-/**
- * Normalized tilt in FW
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_FW, 1.0f);
+	void checkAndReport(const Context &context, Report &reporter) override;
 
-/**
- * Tilt when disarmed and in the first second after arming
- *
- * This specific tilt during spin-up is necessary for some systems whose motors otherwise don't
- * spin-up freely.
- *
- * @min 0.0
- * @max 1.0
- * @increment 0.01
- * @decimal 2
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TILT_SPINUP, 0.0f);
-
-/**
- * Duration of front transition phase 2
- *
- * Time in seconds it takes to tilt form VT_TILT_TRANS to VT_TILT_FW.
- *
- * @unit s
- * @min 0.1
- * @max 5.0
- * @increment 0.01
- * @decimal 3
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_TRANS_P2_DUR, 0.5f);
-
-/**
- * Duration motor tilt up in backtransition
- *
- * Time in seconds it takes to tilt form VT_TILT_FW to VT_TILT_MC.
- *
- * @unit s
- * @min 0.1
- * @max 10
- * @increment 0.1
- * @decimal 1
- * @group VTOL Attitude Control
- */
-PARAM_DEFINE_FLOAT(VT_BT_TILT_DUR, 1.f);
+private:
+	DEFINE_PARAMETERS_CUSTOM_PARENT(HealthAndArmingCheckBase,
+					(ParamInt<px4::params::COM_ARMABLE>) _param_com_armable
+				       )
+};
